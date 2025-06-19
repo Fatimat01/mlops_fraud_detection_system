@@ -1,0 +1,30 @@
+# Core dependencies
+boto3
+sagemaker
+xgboost
+numpy
+pandas
+scikit-learn
+
+# API dependencies
+requests
+fastapi
+ultralytics
+fastapi
+pydantic
+uvicorn
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# Utilities
+python-dotenv
+click
+tabulate
+
+black
+flake8
+mypy
+schedule
+streamlit

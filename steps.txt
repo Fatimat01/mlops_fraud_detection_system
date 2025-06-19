@@ -1,0 +1,43 @@
+chmod +x scripts/*.sh
+
+1. tar model.pkl
+    cd model/ && tar --exclude='*.DS_Store' -czf model.tar.gz model.pkl
+
+2. build image 
+    docker build --platform linux/amd64 -t fraud-detection:latest .
+DOCKER_BUILDKIT=0 docker build --platform linux/amd64 -t fraud-detection:latest .
+3 create ecr repo 
+  aws ecr create-repository \
+  --repository-name fraud-detection \
+  --region us-east-1  
+
+    # Login to ECR
+aws ecr get-login-password \
+  --region us-east-1 | \
+  docker login --username AWS \
+  --password-stdin 306617143793.dkr.ecr.us-east-1.amazonaws.com
+    
+# Tag & push
+docker tag fraud-detection:latest \
+  306617143793.dkr.ecr.us-east-1.amazonaws.com/fraud-detection:latest
+
+docker push \
+  306617143793.dkr.ecr.us-east-1.amazonaws.com/fraud-detection:latest
+
+# test container
+docker run -p 8080:8080 \
+  -v $(pwd)/model:/opt/ml/model \
+  306617143793.dkr.ecr.us-east-1.amazonaws.com/fraud-detection:latest
+
+# test health check
+curl http://localhost:8080/ping
+
+# Test prediction
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"months_as_customer":5,"age":35,"policy_deductable":500,"umbrella_limit":0,"insured_sex":1,"insured_education_level":2,"insured_occupation":3,"insured_hobbies":0,"insured_relationship":0,"incident_type":1,"collision_type":1,"incident_severity":2,"authorities_contacted":0,"number_of_vehicles_involved":1,"property_damage":0,"bodily_injuries":0,"witnesses":1,"police_report_available":1,"total_claim_amount":10000,"injury_claim":1000,"property_claim":2000,"vehicle_claim":3000,"auto_make":1,"auto_year":2018,"incident_hour_bin":3,"claim_ratio":0.33}'
+
+4. deploy terraform code with the s3 backend when on apply
+- unit tests
+- 
+5. when cleanup, destroy all terraform resources
