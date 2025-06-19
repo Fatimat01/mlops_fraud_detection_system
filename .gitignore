@@ -36,3 +36,22 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# environment
+.env
+env/
+venv/
+*.env
+
+# OS files
+.DS_Store
+*.DS_StoreS
+steps.txt
