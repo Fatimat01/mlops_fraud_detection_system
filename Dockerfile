@@ -42,4 +42,4 @@ EXPOSE 8080
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
 
 # Use ENTRYPOINT for SageMaker compatibility
-ENTRYPOINT ["python", "server.py"]
+ENTRYPOINT ["python", "serve.py"]

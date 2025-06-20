@@ -7,7 +7,6 @@ on:
       - 'Dockerfile'
       - 'app/**'
       - 'model/**'
-  workflow_dispatch:
   workflow_call:
 
 env:
@@ -52,7 +51,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          DOCKER_BUILDKIT=0 docker build --platform linux/amd64 -t $PROJECT_NAME:$IMAGE_TAG .
+          docker build -t $PROJECT_NAME:$IMAGE_TAG .
 
       - name: Tag & Push Image to ECR
         run: |
