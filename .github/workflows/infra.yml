@@ -1,4 +1,4 @@
-name: Terraform Deploy Only
+name: Terraform Deploy
 
 on:
   push:
@@ -7,8 +7,79 @@ on:
       - 'infra/terraform/**'
   workflow_dispatch:
 
+env:
+  AWS_REGION: us-east-1
+
 jobs:
   terraform-deploy:
-    uses: ./.github/workflows/ci-cd.yml
-    with:
-      run_only_terraform: true
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat <<EOF > terraform.tfvars
+          project_name  = "fraud-detection"
+          environment   = "prod"
+          endpoint_name = "fraud-detection-endpoint"
+          model_name    = "fraud-detection-model"
+          instance_type = "ml.t2.medium"
+          min_instances = 1
+          max_instances = 2
+          alert_email   = "atandafatimat01@gmail.com"
+          EOF
+
+      - name: Terraform Init
+        run: terraform init -reconfigure
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+
+  post-deploy-test:
+    name: Post Deployment Health Check
+    runs-on: ubuntu-latest
+    needs: terraform-deploy
+    if: needs.terraform-deploy.result == 'success'
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Wait for Endpoint Stabilization
+        run: sleep 90
+
+      - name: Export SageMaker Endpoint URL
+        id: export_endpoint
+        run: |
+          ENDPOINT_URL=$(terraform output -raw endpoint_url)
+          echo "SAGEMAKER_ENDPOINT_URL=$ENDPOINT_URL" >> $GITHUB_ENV
+
+      - name: Ping /ping endpoint
+        run: |
+          curl -f http://${{ env.SAGEMAKER_ENDPOINT_URL }}/ping
+
+      - name: Run Inference Test
+        run: |
+          curl -X POST http://${{ env.SAGEMAKER_ENDPOINT_URL }}/invocations \
+          -H "Content-Type: application/json" \
+          -d '{"months_as_customer":5,"age":35,"policy_deductable":500,"umbrella_limit":0,"insured_sex":1,"insured_education_level":2,"insured_occupation":3,"insured_hobbies":0,"insured_relationship":0,"incident_type":1,"collision_type":1,"incident_severity":2,"authorities_contacted":0,"number_of_vehicles_involved":1,"property_damage":0,"bodily_injuries":0,"witnesses":1,"police_report_available":1,"total_claim_amount":10000,"injury_claim":1000,"property_claim":2000,"vehicle_claim":3000,"auto_make":1,"auto_year":2018,"incident_hour_bin":3,"claim_ratio":0.33}'

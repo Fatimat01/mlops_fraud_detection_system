@@ -9,8 +9,51 @@ on:
       - 'model/**'
   workflow_dispatch:
 
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: fraud-detection
+  IMAGE_TAG: latest
+
 jobs:
   build-and-push-image:
-    uses: ./.github/workflows/ci-cd.yml
-    with:
-      run_only_docker: true
+    name: Build Docker Image & Push to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create ECR Repository (if not exists)
+        id: create_ecr
+        run: |
+          ECR_URI=$(aws ecr describe-repositories --repository-names $PROJECT_NAME --region $AWS_REGION --query 'repositories[0].repositoryUri' --output text 2>/dev/null || true)
+          if [ -z "$ECR_URI" ]; then
+            aws ecr create-repository --repository-name $PROJECT_NAME --region $AWS_REGION
+            ECR_URI=$(aws ecr describe-repositories --repository-names $PROJECT_NAME --region $AWS_REGION --query 'repositories[0].repositoryUri' --output text)
+          fi
+          echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Package model.pkl into model.tar.gz
+        run: |
+          cd model/
+          rm -f model.tar.gz
+          tar --exclude='*.DS_Store' -czf model.tar.gz model.pkl
+
+      - name: Build Docker Image
+        run: |
+          DOCKER_BUILDKIT=0 docker build --platform linux/amd64 -t $PROJECT_NAME:$IMAGE_TAG .
+
+      - name: Tag & Push Image to ECR
+        run: |
+          docker tag $PROJECT_NAME:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
+          docker push $ECR_URI:$IMAGE_TAG

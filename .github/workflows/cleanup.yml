@@ -1,0 +1,55 @@
+name: Cleanup Infrastructure and Images
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: fraud-detection
+
+jobs:
+  destroy-terraform:
+    name: Destroy Terraform Infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init -reconfigure
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+
+  delete-ecr-image:
+    name: Delete Docker Image from ECR
+    runs-on: ubuntu-latest
+    needs: destroy-terraform
+
+    steps:
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete ECR Images
+        run: |
+          aws ecr batch-delete-image \
+            --repository-name $PROJECT_NAME \
+            --image-ids imageTag=latest || true

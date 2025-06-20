@@ -34,7 +34,7 @@ RUN mkdir -p /opt/ml/model \
 # Copy application code
 COPY app /opt/app
 WORKDIR /opt/app
-
+RUN chmod +x serve.py
 # Expose port 8080 (SageMaker expects this)
 EXPOSE 8080
 
@@ -42,4 +42,4 @@ EXPOSE 8080
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
 
 # Use ENTRYPOINT for SageMaker compatibility
-ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+ENTRYPOINT ["python", "server.py"]

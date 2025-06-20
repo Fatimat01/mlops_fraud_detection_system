@@ -47,7 +47,7 @@ output "dashboard_url" {
 
 output "endpoint_url" {
   description = "SageMaker endpoint URL for direct invocation"
-  value       = "https://runtime.sagemaker.${var.aws_region}.amazonaws.com/endpoints/${module.sagemaker.endpoint_name}/invocations"
+  value       = "https://runtime.sagemaker.${var.aws_region}.amazonaws.com/endpoints/${module.sagemaker.endpoint_name}"
 }
 
 output "auto_scaling_configuration" {
