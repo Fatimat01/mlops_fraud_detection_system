@@ -93,13 +93,15 @@ jobs:
           max_instances = 2
           alert_email   = "atandafatimat01@gmail.com"
           EOF
-
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        
       - name: Terraform Init
         run: terraform init -reconfigure
 
       - name: Terraform Validate
         run: terraform validate
-        
+
       - name: Terraform Plan
         run: terraform plan
 
