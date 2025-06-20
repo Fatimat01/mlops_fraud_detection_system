@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'infra/terraform/**'
-  workflow_call:
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1

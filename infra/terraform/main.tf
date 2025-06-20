@@ -60,7 +60,7 @@ module "sagemaker" {
   model_artifacts_bucket_name = module.s3.model_artifacts_bucket_name
   auto_scaling_role_arn     = module.iam.auto_scaling_role_arn
   tags                      = local.common_tags
-  depends_on = [module.s3]
+  depends_on = [module.s3, module.monitoring]
 }
 
 # use the following commented code to enable the Lambda and API Gateway modules if needed
@@ -97,7 +97,7 @@ module "monitoring" {
   environment           = var.environment
   aws_region           = var.aws_region
   alert_email          = var.alert_email
-  endpoint_name        = module.sagemaker.endpoint_name
+  endpoint_name        = var.endpoint_name
 #  lambda_function_name = module.lambda.lambda_function_name
   tags                 = local.common_tags
 }

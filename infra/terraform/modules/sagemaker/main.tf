@@ -64,33 +64,33 @@ resource "aws_sagemaker_endpoint" "fraud_detection" {
 }
 
 # Auto Scaling Target
-resource "aws_appautoscaling_target" "sagemaker_endpoint" {
-  service_namespace  = "sagemaker"
-  resource_id        = "endpoint/${aws_sagemaker_endpoint.fraud_detection.name}/variant/AllTraffic"
-  scalable_dimension = "sagemaker:variant:DesiredInstanceCount"
-  min_capacity       = var.min_instances
-  max_capacity       = var.max_instances
-  role_arn          = var.auto_scaling_role_arn
-}
+# resource "aws_appautoscaling_target" "sagemaker_endpoint" {
+#   service_namespace  = "sagemaker"
+#   resource_id        = "endpoint/${aws_sagemaker_endpoint.fraud_detection.name}/variant/AllTraffic"
+#   scalable_dimension = "sagemaker:variant:DesiredInstanceCount"
+#   min_capacity       = var.min_instances
+#   max_capacity       = var.max_instances
+#   role_arn          = var.auto_scaling_role_arn
+# }
 
-# Auto Scaling Policy
-resource "aws_appautoscaling_policy" "sagemaker_endpoint" {
-  name               = "${var.endpoint_name}-scaling-policy"
-  policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.sagemaker_endpoint.service_namespace
-  resource_id        = aws_appautoscaling_target.sagemaker_endpoint.resource_id
-  scalable_dimension = aws_appautoscaling_target.sagemaker_endpoint.scalable_dimension
+# # Auto Scaling Policy
+# resource "aws_appautoscaling_policy" "sagemaker_endpoint" {
+#   name               = "${var.endpoint_name}-scaling-policy"
+#   policy_type        = "TargetTrackingScaling"
+#   service_namespace  = aws_appautoscaling_target.sagemaker_endpoint.service_namespace
+#   resource_id        = aws_appautoscaling_target.sagemaker_endpoint.resource_id
+#   scalable_dimension = aws_appautoscaling_target.sagemaker_endpoint.scalable_dimension
 
-  target_tracking_scaling_policy_configuration {
-    target_value = 70.0
+#   target_tracking_scaling_policy_configuration {
+#     target_value = 70.0
 
-    predefined_metric_specification {
-      predefined_metric_type = "SageMakerVariantInvocationsPerInstance"
-    }
+#     predefined_metric_specification {
+#       predefined_metric_type = "SageMakerVariantInvocationsPerInstance"
+#     }
 
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 60
-  }
-}
+#     scale_in_cooldown  = 300
+#     scale_out_cooldown = 60
+#   }
+# }
 
 
