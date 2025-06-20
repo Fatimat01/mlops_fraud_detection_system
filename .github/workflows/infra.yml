@@ -6,6 +6,7 @@ on:
     paths:
       - 'infra/terraform/**'
   workflow_dispatch:
+  workflow_call:
 
 env:
   AWS_REGION: us-east-1

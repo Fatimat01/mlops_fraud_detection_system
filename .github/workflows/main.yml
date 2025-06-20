@@ -5,7 +5,9 @@ on:
 jobs:
   build-docker:
     uses: ./.github/workflows/image.yml
+    secrets: inherit
 
   deploy-terraform:
     uses: ./.github/workflows/infra.yml
     needs: build-docker
+    secrets: inherit
