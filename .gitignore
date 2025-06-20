@@ -53,5 +53,5 @@ venv/
 
 # OS files
 .DS_Store
-*.DS_StoreS
+*.DS_Store
 steps.txt

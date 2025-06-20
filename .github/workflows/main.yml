@@ -1,9 +1,14 @@
-name: Fraud Detection
+name: Full CI/CD Pipeline
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      run_only_terraform:
+        required: false
+        type: boolean
 
 env:
   AWS_REGION: us-east-1
@@ -15,6 +20,7 @@ jobs:
   build-and-push-image:
     name: Build Docker Image & Push to ECR
     runs-on: ubuntu-latest
+    if: ${{ inputs.run_only_terraform != true }}
 
     steps:
       - name: Checkout Code
@@ -43,12 +49,12 @@ jobs:
       - name: Package model.pkl into model.tar.gz
         run: |
           cd model/
-          rm -f model.tar.gz  # Remove old tar file if exists
+          rm -f model.tar.gz
           tar --exclude='*.DS_Store' -czf model.tar.gz model.pkl
 
-      - name: Build Docker Image for
+      - name: Build Docker Image
         run: |
-          docker build -t $PROJECT_NAME:$IMAGE_TAG .
+          DOCKER_BUILDKIT=0 docker build --platform linux/amd64 -t $PROJECT_NAME:$IMAGE_TAG .
 
       - name: Tag & Push Image to ECR
         run: |
@@ -57,9 +63,9 @@ jobs:
 
   terraform-deploy:
     name: Deploy Terraform Infrastructure
-    needs: build-and-push-image
     runs-on: ubuntu-latest
-
+    needs: [build-and-push-image]
+    if: always()  # Always run even if image build is skipped
     defaults:
       run:
         working-directory: infra/terraform
@@ -78,26 +84,27 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        run: terraform plan
-
       - name: Terraform Apply
         run: terraform apply --auto-approve
 
-      - name: Export SageMaker Endpoint URL to Environment
+  post-deploy-test:
+    name: Health Check After Deployment
+    runs-on: ubuntu-latest
+    needs: terraform-deploy
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Wait for Endpoint Stabilization
+        run: sleep 90
+
+      - name: Export SageMaker Endpoint URL
         id: export_endpoint
+        working-directory: infra/terraform
         run: |
           ENDPOINT_URL=$(terraform output -raw endpoint_url)
           echo "SAGEMAKER_ENDPOINT_URL=$ENDPOINT_URL" >> $GITHUB_ENV
-
-  post-deploy-test:
-    name: Health Check After Deployment
-    needs: terraform-deploy
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Wait for Endpoint Stabilization
-        run: sleep 90
 
       - name: Ping /ping endpoint
         run: |
@@ -110,11 +117,10 @@ jobs:
           -d '{"months_as_customer":5,"age":35,"policy_deductable":500,"umbrella_limit":0,"insured_sex":1,"insured_education_level":2,"insured_occupation":3,"insured_hobbies":0,"insured_relationship":0,"incident_type":1,"collision_type":1,"incident_severity":2,"authorities_contacted":0,"number_of_vehicles_involved":1,"property_damage":0,"bodily_injuries":0,"witnesses":1,"police_report_available":1,"total_claim_amount":10000,"injury_claim":1000,"property_claim":2000,"vehicle_claim":3000,"auto_make":1,"auto_year":2018,"incident_hour_bin":3,"claim_ratio":0.33}'
 
   destroy:
-    name: Destroy Infrastructure (manual cleanup)
-    if: github.event_name == 'workflow_dispatch'
+    name: Destroy Terraform Infrastructure
     runs-on: ubuntu-latest
-    needs: terraform-deploy
-
+    if: github.event_name == 'workflow_dispatch'
+    needs: post-deploy-test
     defaults:
       run:
         working-directory: infra/terraform

@@ -1,0 +1,14 @@
+name: Terraform Deploy Only
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
+  workflow_dispatch:
+
+jobs:
+  terraform-deploy:
+    uses: ./.github/workflows/ci-cd.yml
+    with:
+      run_only_terraform: true

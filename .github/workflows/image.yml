@@ -1,0 +1,16 @@
+name: Docker Build Only
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'app/**'
+      - 'model/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-push-image:
+    uses: ./.github/workflows/ci-cd.yml
+    with:
+      run_only_docker: true
