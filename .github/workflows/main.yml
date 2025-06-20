@@ -95,7 +95,13 @@ jobs:
           EOF
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -reconfigure
+
+      - name: Terraform Validate
+        run: terraform validate
+        
+      - name: Terraform Plan
+        run: terraform plan
 
       - name: Terraform Apply
         run: terraform apply --auto-approve
