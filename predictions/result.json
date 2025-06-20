@@ -1,0 +1,1 @@
+{"predictions":[0.016783954575657845],"fraud_probability":[0.016783954575657845],"detailed_predictions":[{"fraud_probability":0.016783954575657845,"is_fraud":false,"risk_level":"LOW","confidence":0.9664320908486843}],"metadata":{"model_version":"1.0","prediction_count":1,"timestamp":"2025-06-20T03:49:44.533225"}}
