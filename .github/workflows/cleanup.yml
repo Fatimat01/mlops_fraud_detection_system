@@ -29,6 +29,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Generate terraform.tfvars
+        run: |
+          cat <<EOF > terraform.tfvars
+          project_name  = "fraud-detection"
+          environment   = "prod"
+          endpoint_name = "fraud-detection-endpoint"
+          model_name    = "fraud-detection-model"
+          instance_type = "ml.t2.medium"
+          min_instances = 1
+          max_instances = 2
+          alert_email   = "atandafatimat01@gmail.com"
+          EOF
+
       - name: Terraform Init
         run: terraform init -reconfigure
 

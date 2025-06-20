@@ -1,3 +1,5 @@
+name: Fraud Detection MLOps Pipeline
+
 on:
   push:
     branches: [ main ]
